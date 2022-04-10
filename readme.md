@@ -1,4 +1,4 @@
-# Cmplete To Do List
+# Complete To Do List
 
 ## Widgets and functionalities used are
 
