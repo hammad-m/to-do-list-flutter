@@ -22,6 +22,7 @@ class _NewTaskState extends State<NewTask> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
+            context.read<TaskList>().refreshList();
             context.read<TaskList>().sortList();
             context.read<TaskList>().sortListByStatus();
             Navigator.pop(context);

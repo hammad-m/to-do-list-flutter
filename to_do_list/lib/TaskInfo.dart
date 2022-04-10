@@ -1,9 +1,13 @@
 import 'dart:html';
+import 'package:assignment_4/TaskEdit.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:assignment_4/tasks.dart';
 import 'package:provider/provider.dart';
+
+import 'dialog.dart';
 
 class TaskInfo extends StatefulWidget {
   final int index;
@@ -61,18 +65,57 @@ class _TaskInfoState extends State<TaskInfo> {
             ),
             showDueDate(),
             context.watch<TaskList>().getStatus(widget.index)
-                ? SizedBox(
-                    width: 600,
-                    height: 50,
-                    child: Text(
-                      'You marked this task as done on ' +
-                          DateFormat(("yyyy-MM-dd"))
-                              .format(context
-                                  .watch<TaskList>()
-                                  .getCompletionDate(widget.index))
-                              .toString(),
-                      style: const TextStyle(color: Colors.green, fontSize: 20),
-                    ),
+                ? Column(
+                    children: [
+                      SizedBox(
+                        width: 600,
+                        height: 50,
+                        child: Text(
+                          'You marked this task as done on ' +
+                              DateFormat(("yyyy-MM-dd"))
+                                  .format(context
+                                      .watch<TaskList>()
+                                      .getCompletionDate(widget.index))
+                                  .toString(),
+                          style: const TextStyle(
+                              color: Colors.green, fontSize: 20),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              primary: Colors.blue, onPrimary: Colors.white),
+                          onPressed: () => {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    TaskEdit(index: widget.index),
+                              ),
+                            ),
+                          },
+                          child: const Text('Edit Task'),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              primary: Colors.red, onPrimary: Colors.white),
+                          onPressed: () async {
+                            if (await Dialogs.showDeleteConfirmationDialog(
+                                context)) {
+                              context.read<TaskList>().deleteTask(widget.index);
+                              Navigator.of(context).pop();
+                            } else {
+                              //do nothing
+                            }
+                          },
+                          child: const Text('Delete Task'),
+                        ),
+                      ),
+                    ],
                   )
                 : context
                         .watch<TaskList>()
@@ -89,29 +132,124 @@ class _TaskInfoState extends State<TaskInfo> {
                               style: TextStyle(color: Colors.red, fontSize: 20),
                             ),
                           ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                primary: Colors.green, onPrimary: Colors.white),
-                            onPressed: () {
-                              context
-                                  .read<TaskList>()
-                                  .setCompletedOn(widget.index);
-                              context.read<TaskList>().setStatus(widget.index);
-                              setState(() {});
-                            },
-                            child: const Text('Mark as Done'),
+                          Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  primary: Colors.green,
+                                  onPrimary: Colors.white),
+                              onPressed: () {
+                                context
+                                    .read<TaskList>()
+                                    .setCompletedOn(widget.index);
+                                context
+                                    .read<TaskList>()
+                                    .setStatus(widget.index);
+                                setState(() {});
+                              },
+                              child: const Text('Mark as Done'),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  primary: Colors.blue,
+                                  onPrimary: Colors.white),
+                              onPressed: () => {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        TaskEdit(index: widget.index),
+                                  ),
+                                ),
+                              },
+                              child: const Text('Edit Task'),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  primary: Colors.red, onPrimary: Colors.white),
+                              onPressed: () async {
+                                if (await Dialogs.showDeleteConfirmationDialog(
+                                    context)) {
+                                  context
+                                      .read<TaskList>()
+                                      .deleteTask(widget.index);
+                                  Navigator.of(context).pop();
+                                } else {
+                                  //do nothing
+                                }
+                              },
+                              child: const Text('Delete Task'),
+                            ),
                           ),
                         ],
                       )
-                    : ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            primary: Colors.green, onPrimary: Colors.white),
-                        onPressed: () {
-                          context.read<TaskList>().setCompletedOn(widget.index);
-                          context.read<TaskList>().setStatus(widget.index);
-                          setState(() {});
-                        },
-                        child: const Text('Mark as Done'),
+                    : Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: Padding(
+                              padding: const EdgeInsets.all(6.0),
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                    primary: Colors.green,
+                                    onPrimary: Colors.white),
+                                onPressed: () {
+                                  context
+                                      .read<TaskList>()
+                                      .setCompletedOn(widget.index);
+                                  context
+                                      .read<TaskList>()
+                                      .setStatus(widget.index);
+                                  setState(() {});
+                                },
+                                child: const Text('Mark as Done'),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  primary: Colors.blue,
+                                  onPrimary: Colors.white),
+                              onPressed: () => {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        TaskEdit(index: widget.index),
+                                  ),
+                                ),
+                              },
+                              child: const Text('Edit Task'),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  primary: Colors.red, onPrimary: Colors.white),
+                              onPressed: () async {
+                                if (await Dialogs.showDeleteConfirmationDialog(
+                                    context)) {
+                                  context
+                                      .read<TaskList>()
+                                      .deleteTask(widget.index);
+                                  Navigator.of(context).pop();
+                                } else {
+                                  //do nothing
+                                }
+                              },
+                              child: const Text('Delete Task'),
+                            ),
+                          ),
+                        ],
                       ),
           ],
         ),

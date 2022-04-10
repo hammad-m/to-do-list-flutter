@@ -5,19 +5,35 @@ import 'package:provider/provider.dart';
 import 'package:assignment_4/tasks.dart';
 import 'package:intl/intl.dart';
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'dialog.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+        apiKey: "",
+        authDomain: "",
+        projectId: "",
+        storageBucket: "",
+        messagingSenderId: "",
+        appId: ""),
+  );
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => TaskList()),
       ],
-      child: const MyApp(),
+      child: MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  MyApp({Key? key}) : super(key: key);
+  final Future<FirebaseApp> _initialization = Firebase.initializeApp();
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -25,7 +41,15 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Tasks'),
+      home: FutureBuilder(
+        future: _initialization,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return const MyHomePage(title: 'Assignment 5');
+          }
+          return const CircularProgressIndicator();
+        },
+      ),
     );
   }
 }
@@ -39,11 +63,30 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool _isLoading = true;
+  @override
+  void initState() {
+    super.initState();
+    showLoading();
+  }
+
+  void showLoading() async {
+    // Load from Firebase
+    context.read<TaskList>().refreshList();
+    // delay(Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 3));
+    _isLoading = false;
+    // wait for the data to load
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    return context.watch<TaskList>().isEmpty()
-        ? noTaskScreen()
-        : withTaskScreen();
+    return _isLoading
+        ? CircularProgressIndicator()
+        : context.watch<TaskList>().isEmpty()
+            ? noTaskScreen()
+            : withTaskScreen();
   }
 
   Scaffold withTaskScreen() {
@@ -77,11 +120,25 @@ class _MyHomePageState extends State<MyHomePage> {
                     .toString()),
           ),
           trailing: list[index].status
-              ? const SizedBox(
-                  width: 60,
-                  child: Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
+              ? SizedBox(
+                  width: 120,
+                  child: Row(
+                    children: [
+                      IconButton(
+                          onPressed: () async {
+                            if (await Dialogs.showDeleteConfirmationDialog(
+                                context)) {
+                              context.read<TaskList>().deleteTask(index);
+                            } else {
+                              //do nothing
+                            }
+                          },
+                          icon: const Icon(Icons.delete_forever)),
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                      ),
+                    ],
                   ),
                 )
               : context
@@ -89,9 +146,19 @@ class _MyHomePageState extends State<MyHomePage> {
                       .getDueDate(index)
                       .isBefore(DateTime.now())
                   ? SizedBox(
-                      width: 60,
+                      width: 120,
                       child: Row(
                         children: [
+                          IconButton(
+                              onPressed: () async {
+                                if (await Dialogs.showDeleteConfirmationDialog(
+                                    context)) {
+                                  context.read<TaskList>().deleteTask(index);
+                                } else {
+                                  //do nothing
+                                }
+                              },
+                              icon: const Icon(Icons.delete_forever)),
                           IconButton(
                             onPressed: () {
                               context.read<TaskList>().setCompletedOn(index);
@@ -118,17 +185,31 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     )
                   : SizedBox(
-                      width: 60,
-                      child: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            context.read<TaskList>().setCompletedOn(index);
-                            context.read<TaskList>().setStatus(index);
-                            context.read<TaskList>().sortList();
-                            context.read<TaskList>().sortListByStatus();
-                          });
-                        },
-                        icon: const Icon(Icons.circle_outlined),
+                      width: 120,
+                      child: Row(
+                        children: [
+                          IconButton(
+                              onPressed: () async {
+                                if (await Dialogs.showDeleteConfirmationDialog(
+                                    context)) {
+                                  context.read<TaskList>().deleteTask(index);
+                                } else {
+                                  //do nothing
+                                }
+                              },
+                              icon: const Icon(Icons.delete_forever)),
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                context.read<TaskList>().setCompletedOn(index);
+                                context.read<TaskList>().setStatus(index);
+                                context.read<TaskList>().sortList();
+                                context.read<TaskList>().sortListByStatus();
+                              });
+                            },
+                            icon: const Icon(Icons.circle_outlined),
+                          ),
+                        ],
                       ),
                     ),
         ),
@@ -141,7 +222,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => NewTask(),
+              builder: (context) => const NewTask(),
             ),
           );
         },
